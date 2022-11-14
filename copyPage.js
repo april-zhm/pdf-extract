@@ -1,6 +1,5 @@
 const  {PDFDocument}  = require('pdf-lib')
 const fs = require('fs')
-//const pdfDocument = require('pdf-lib')
 
 async function copyPages(begin,end) {
     const url = "./data/sample_pdf.pdf"
@@ -18,7 +17,7 @@ async function copyPages(begin,end) {
 
     const pdfNewBytes = await pdfNew.save()
 
-    fs.writeFileSync('./data/result2.pdf',pdfNewBytes)
+    fs.writeFileSync('./data/result.pdf',pdfNewBytes)
 }
 
 copyPages(1,5)

@@ -1,41 +1,39 @@
 const pdfLib = require('pdfjs-dist')
-const pdfDoc = require('pdfkit');
-const pdfDocument = require('pdf-lib');
 const fs = require('fs')
 
 
 var loadingTask = pdfLib.getDocument("./data/sample_pdf.pdf");
+var bookMark = "Sample File"
+
 loadingTask.promise.then(function(pdf) {
     console.log('PDF loaded')
-        
     // Get the tree outline
     pdf.getOutline().then(function(outline) {
         if (outline) {
-            //console.log(outline)
-            let pairs = [];
+            //find bookmark
+            outline = outline.filter( (item) => {
+                return item.title == bookMark
+            });
+            console.log(outline.length+ ' bookmark found')
             for (let i = 0; i < outline.length; i++) {
                 //console.log(outline[i].title)
+                //get bookmark destination
                 const dest = outline[i].dest;
-                //console.log(dest[0].num)
-                
-                
-                if (outline[i].title == 'Section 7: Application Deployment'){
-                    console.log("this is the one")
+                if (typeof dest =='string') {
+                    pdf.getDestination(dest).then(function(dest) {
+                        const ref = dest[0];
+                        // And the page id
+                        pdf.getPageIndex(ref).then(function(id) {
+                            console.log('bookmark found on page '+id)
+                        });
+                    })
+                } else {
+                    ref = dest[0];
+                    pdf.getPageIndex(ref).then(function(id) {
+                        console.log('bookmark found on page '+id)
+                    });
                 }
-                pdf.getPageIndex(dest[0]).then(function(id) {
-                    // page number = index + 1
-                    pairs.push({ title: outline[i].title, pageNumber:  parseInt(id) + 1 });
-                    //console.log(outline[i].title);
-                    // console.log(id+1)
-                    console.log(pairs)
-                    pdf.getPage(id).then( (page)=>{
-                        console.log('page loaded')
-                        
-                        
-                    } )
-                });
             }
-            console.log(pairs)
         }
      
     });
