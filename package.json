@@ -1,0 +1,16 @@
+{
+  "name": "pdf-extract",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "description": "",
+  "main": "extract.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^3.0.279"
+  }
+}
