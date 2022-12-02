@@ -5,6 +5,37 @@ const fs = require('fs')
 var loadingTask = pdfLib.getDocument("./data/sample_pdf.pdf");
 var bookMark = "Sample File"
 
+
+const getBookmark = async(docAddress,targetBookmark) => {
+    const pdf = await pdfLib.getDocument(docAddress).promise;
+    const outline = await pdf.getOutline();
+    //console.log(outline)
+    if (outline) {
+        for (let i = 0; i < outline.length; i++) {
+            //console.log(outline[i].title)
+            var ref = ''
+            if (outline[i].title == targetBookmark) {
+                const dest = outline[i].dest;
+                if (typeof dest =='string') {
+                    const bookmarkDestination = await pdf.getDestination(dest);
+                    ref = bookmarkDestination[0];
+                } else {
+                    ref = dest[0];
+                }
+                const bookmarkPageId = await pdf.getPageIndex(ref);
+                console.log('bookmark found on page '+ bookmarkPageId)
+                return bookmarkPageId
+            }
+        }
+    }
+}
+
+getBookmark("./data/sample_pdf.pdf",bookMark).then((result)=> {
+    console.log(result)
+}).catch((e)=> {
+    console.log(e)
+})
+/*
 loadingTask.promise.then(function(pdf) {
     console.log('PDF loaded')
     // Get the tree outline
@@ -41,3 +72,4 @@ loadingTask.promise.then(function(pdf) {
     // PDF loading error
     console.error(reason);
   });
+*/
