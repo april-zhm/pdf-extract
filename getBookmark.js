@@ -1,75 +1,60 @@
 const pdfLib = require('pdfjs-dist')
+const  {PDFDocument}  = require('pdf-lib')
 const fs = require('fs')
 
-
-var loadingTask = pdfLib.getDocument("./data/sample_pdf.pdf");
-var bookMark = "Sample File"
-
-
-const getBookmark = async(docAddress,targetBookmark) => {
-    const pdf = await pdfLib.getDocument(docAddress).promise;
+const getBookmark = async(fileURL,targetBookmark) => {
+    //read pdf file and get outline
+    const pdf = await pdfLib.getDocument(fileURL).promise;
     const outline = await pdf.getOutline();
     //console.log(outline)
     if (outline) {
         for (let i = 0; i < outline.length; i++) {
             //console.log(outline[i].title)
-            var ref = ''
             if (outline[i].title == targetBookmark) {
-                const dest = outline[i].dest;
-                if (typeof dest =='string') {
-                    const bookmarkDestination = await pdf.getDestination(dest);
-                    ref = bookmarkDestination[0];
-                } else {
-                    ref = dest[0];
-                }
-                const bookmarkPageId = await pdf.getPageIndex(ref);
-                console.log('bookmark found on page '+ bookmarkPageId)
-                return bookmarkPageId
+                const beginDest = outline[i].dest;
+                const beginPage = await getPage(pdf,beginDest)
+                const endDest = outline[i+1].dest
+                const endPage = await getPage(pdf,endDest) -1
+                return {beginPage,endPage}
             }
         }
     }
 }
 
-getBookmark("./data/sample_pdf.pdf",bookMark).then((result)=> {
-    console.log(result)
+const getPage = async(pdf,destination) => {
+    var ref = ''
+    if (typeof destination =='string') {
+        const bookmarkDestination = await pdf.getDestination(destination);
+        ref = bookmarkDestination[0];
+    } else if (typeof destination =='object') {
+        ref = destination[0];
+    }
+    const bookmarkPageId = await pdf.getPageIndex(ref);
+    console.log('bookmark found on page '+ bookmarkPageId)
+    return bookmarkPageId
+}
+
+const copyPages = async (fileURL,beginPage,endPage) => {
+    const pdfByte = fs.readFileSync(fileURL)
+    const pdfDoc = await PDFDocument.load(pdfByte)
+    const pdfNew = await PDFDocument.create();
+    console.log(beginPage,endPage)
+    for (let i = beginPage;i <= endPage;  i++ ) {
+        console.log(i)
+        const [pageToCopy] = await pdfNew.copyPages(pdfDoc,[i])
+        pdfNew.addPage(pageToCopy)
+    }
+
+    const pdfNewBytes = await pdfNew.save()
+
+    fs.writeFileSync('./data/result.pdf',pdfNewBytes)
+}
+var bookMark = "Sample File"
+
+var fileURL = "./data/sample_pdf.pdf"
+
+getBookmark(fileURL,bookMark).then(({beginPage,endPage})=> {
+    copyPages(fileURL,beginPage,endPage)
 }).catch((e)=> {
     console.log(e)
 })
-/*
-loadingTask.promise.then(function(pdf) {
-    console.log('PDF loaded')
-    // Get the tree outline
-    pdf.getOutline().then(function(outline) {
-        if (outline) {
-            //find bookmark
-            outline = outline.filter( (item) => {
-                return item.title == bookMark
-            });
-            console.log(outline.length+ ' bookmark found')
-            for (let i = 0; i < outline.length; i++) {
-                //console.log(outline[i].title)
-                //get bookmark destination
-                const dest = outline[i].dest;
-                if (typeof dest =='string') {
-                    pdf.getDestination(dest).then(function(dest) {
-                        const ref = dest[0];
-                        // And the page id
-                        pdf.getPageIndex(ref).then(function(id) {
-                            console.log('bookmark found on page '+id)
-                        });
-                    })
-                } else {
-                    ref = dest[0];
-                    pdf.getPageIndex(ref).then(function(id) {
-                        console.log('bookmark found on page '+id)
-                    });
-                }
-            }
-        }
-     
-    });
-  }, function (reason) {
-    // PDF loading error
-    console.error(reason);
-  });
-*/
